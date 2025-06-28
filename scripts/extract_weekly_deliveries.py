@@ -60,8 +60,8 @@ def extract_store_name(row):
     # Check for store name in the second column (index 1)
     if len(row) >= 2 and row[1] and not pd.isna(row[1]):
         store = str(row[1]).strip()
-        # Common identifiers for store names
-        store_indicators = ['CHECKERS', 'SPAR', 'PNP', 'SAVEWAYS', 'GROVE', 'HAZYVIEW', 'BARBERTON', 'PLAZA', 'KLIPFONTEIN']
+        # Common identifiers for store names - expanded to include MALL
+        store_indicators = ['CHECKERS', 'SPAR', 'PNP', 'SAVEWAYS', 'GROVE', 'HAZYVIEW', 'BARBERTON', 'PLAZA', 'KLIPFONTEIN', 'MALL']
         if any(indicator in store.upper() for indicator in store_indicators):
             return store
     return None

@@ -32,7 +32,7 @@ except Exception:
 st.sidebar.title("Navigation")
 page = st.sidebar.selectbox(
     "Select a page",
-    ["Daily Expenses", "Daily Weekly Expenses", "Expense Daily", "Combined View", "Returns Summary", "Deliveries Summary"]
+    ["Daily Expenses", "Daily Weekly Expenses", "Expense Daily", "Combined View", "Returns Summary", "Deliveries Summary", "Deliveries & Returns Combined"]
 )
 
 # Initialize database connection and load CSVs if needed
@@ -44,7 +44,8 @@ csv_paths = {
     'daily_weekly_expenses': os.path.join(os.path.dirname(__file__), 'data/daily_weekly_expenses_formatted.csv'),
     'expense_daily': os.path.join(os.path.dirname(__file__), 'data/expense_daily_formatted.csv'),
     'returns': os.path.join(os.path.dirname(__file__), 'data/returns_formatted.csv'),
-    'deliveries': os.path.join(os.path.dirname(__file__), 'data/deliveries_formatted.csv')
+    'deliveries': os.path.join(os.path.dirname(__file__), 'data/deliveries_formatted.csv'),
+    'deliveries_returns_combined': os.path.join(os.path.dirname(__file__), 'data/deliveries_returns_combined.csv')
 }
 
 # Load CSVs into DuckDB if they exist, with debug output
@@ -52,16 +53,22 @@ for table_name, path in csv_paths.items():
     try:
         if os.path.exists(path) and os.path.getsize(path) > 0:
             print(f"Loading {path} into {table_name} table")
-            # Ensure numeric type for Returns or Deliveries columns when loading data
-            if table_name in ['returns', 'deliveries']:
+            # Ensure numeric type for Returns, Deliveries, or combined columns when loading data
+            if table_name in ['returns', 'deliveries', 'deliveries_returns_combined']:
                 # First load data into pandas to ensure proper typing
                 import pandas as pd
                 df = pd.read_csv(path)
                 if table_name == 'returns':
                     df['Returns'] = pd.to_numeric(df['Returns'], errors='coerce').fillna(0)
+                    df['ReturnAmount'] = pd.to_numeric(df['ReturnAmount'], errors='coerce').fillna(0)
                 elif table_name == 'deliveries':
                     df['Delivered'] = pd.to_numeric(df['Delivered'], errors='coerce').fillna(0)
                     df['DeliveryAmount'] = pd.to_numeric(df['DeliveryAmount'], errors='coerce').fillna(0)
+                elif table_name == 'deliveries_returns_combined':
+                    df['Delivered'] = pd.to_numeric(df['Delivered'], errors='coerce').fillna(0)
+                    df['DeliveryAmount'] = pd.to_numeric(df['DeliveryAmount'], errors='coerce').fillna(0)
+                    df['Returns'] = pd.to_numeric(df['Returns'], errors='coerce').fillna(0)
+                    df['ReturnAmount'] = pd.to_numeric(df['ReturnAmount'], errors='coerce').fillna(0)
                 
                 # Create temporary CSV with proper types
                 temp_path = path + '.temp'
@@ -303,13 +310,13 @@ elif page == "Returns Summary":
     # Filters
     with st.sidebar:
         st.subheader("Filters")
-        # Get unique values for filters
-        years = run_query("SELECT DISTINCT Year FROM returns ORDER BY Year").values.flatten().tolist()
+        # Get unique values for filters from combined dataset
+        years = run_query("SELECT DISTINCT Year FROM deliveries_returns_combined ORDER BY Year").values.flatten().tolist()
         selected_years = st.multiselect("Select Year(s)", years, default=years)
         
         # Get stores based on selected years
         if selected_years:
-            stores = run_query(f"SELECT DISTINCT Store FROM returns WHERE Year IN {tuple(selected_years)} ORDER BY Store").values.flatten().tolist()
+            stores = run_query(f"SELECT DISTINCT Store FROM deliveries_returns_combined WHERE Year IN {tuple(selected_years)} ORDER BY Store").values.flatten().tolist()
             selected_stores = st.multiselect("Select Store(s)", stores, default=[])
             
             # Get weeks based on selected years and stores, ordered by WeekIndex
@@ -317,14 +324,14 @@ elif page == "Returns Summary":
             if selected_stores:
                 filter_condition += f" AND Store IN {tuple(map(str, selected_stores))}"
             # Ensure weeks are ordered by WeekIndex (dynamic chronological order)
-            weeks = run_query(f"SELECT DISTINCT Week FROM returns {filter_condition} ORDER BY WeekIndex").values.flatten().tolist()
+            weeks = run_query(f"SELECT DISTINCT Week FROM deliveries_returns_combined {filter_condition} ORDER BY WeekIndex").values.flatten().tolist()
             selected_weeks = st.multiselect("Select Week(s)", weeks, default=[])
         else:
             selected_stores = []
             selected_weeks = []
     
-    # Build query based on filters
-    query = "SELECT * FROM returns WHERE 1=1"
+    # Build query based on filters - only show records with returns > 0
+    query = "SELECT Week, Year, Store, CakeType, WeekIndex, Delivered, DeliveryAmount, Returns, ReturnAmount FROM deliveries_returns_combined WHERE Returns > 0"
     if selected_years:
         query += f" AND Year IN {tuple(selected_years)}"
     if selected_stores:
@@ -370,9 +377,6 @@ elif page == "Returns Summary":
             
             # Display the chart with combined labels that maintain proper order
             st.line_chart(ordered_pivot)
-            
-
-
         else:
             st.warning("No return data available for the selected filters.")
 
@@ -396,6 +400,8 @@ elif page == "Returns Summary":
         )
         fig.update_layout(xaxis_title='Week (Chronological)', yaxis_title='Returns', legend_title='Store')
         st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("No return data available for the selected filters.")
 
 elif page == "Deliveries Summary":
     st.header("Deliveries Summary")
@@ -403,13 +409,13 @@ elif page == "Deliveries Summary":
     # Filters
     with st.sidebar:
         st.subheader("Filters")
-        years = run_query("SELECT DISTINCT Year FROM deliveries ORDER BY Year").values.flatten().tolist()
+        years = run_query("SELECT DISTINCT Year FROM deliveries_returns_combined ORDER BY Year").values.flatten().tolist()
         selected_years = st.multiselect("Select Year(s)", years, default=years)
         
         if selected_years:
             # Filter stores based on selected years
             filter_condition = f"WHERE Year IN {tuple(selected_years)}"
-            stores = run_query(f"SELECT DISTINCT Store FROM deliveries {filter_condition} ORDER BY Store").values.flatten().tolist()
+            stores = run_query(f"SELECT DISTINCT Store FROM deliveries_returns_combined {filter_condition} ORDER BY Store").values.flatten().tolist()
             selected_stores = st.multiselect("Select Store(s)", stores, default=[])
             
             # Filter weeks based on selected years and stores
@@ -417,14 +423,14 @@ elif page == "Deliveries Summary":
             if selected_stores:
                 filter_condition += f" AND Store IN {tuple(map(str, selected_stores))}"
             # Ensure weeks are ordered by WeekIndex (dynamic chronological order)
-            weeks = run_query(f"SELECT DISTINCT Week FROM deliveries {filter_condition} ORDER BY WeekIndex").values.flatten().tolist()
+            weeks = run_query(f"SELECT DISTINCT Week FROM deliveries_returns_combined {filter_condition} ORDER BY WeekIndex").values.flatten().tolist()
             selected_weeks = st.multiselect("Select Week(s)", weeks, default=[])
         else:
             selected_stores = []
             selected_weeks = []
     
-    # Build query based on filters
-    query = "SELECT * FROM deliveries WHERE 1=1"
+    # Build query based on filters - show all delivery records
+    query = "SELECT Week, Year, Store, CakeType, WeekIndex, Delivered, DeliveryAmount, Returns, ReturnAmount FROM deliveries_returns_combined WHERE 1=1"
     if selected_years:
         query += f" AND Year IN {tuple(selected_years)}"
     if selected_stores:
@@ -493,6 +499,147 @@ elif page == "Deliveries Summary":
         )
         fig.update_layout(xaxis_title='Week (Chronological)', yaxis_title='Deliveries', legend_title='Store')
         st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("No delivery data available for the selected filters.")
+
+elif page == "Deliveries & Returns Combined":
+    st.header("Deliveries & Returns Combined View")
+    
+    # Filters
+    with st.sidebar:
+        st.subheader("Filters")
+        years = run_query("SELECT DISTINCT Year FROM deliveries_returns_combined ORDER BY Year").values.flatten().tolist()
+        selected_years = st.multiselect("Select Year(s)", years, default=years)
+        
+        if selected_years:
+            # Filter stores based on selected years
+            filter_condition = f"WHERE Year IN {tuple(selected_years)}"
+            stores = run_query(f"SELECT DISTINCT Store FROM deliveries_returns_combined {filter_condition} ORDER BY Store").values.flatten().tolist()
+            selected_stores = st.multiselect("Select Store(s)", stores, default=[])
+            
+            # Filter weeks based on selected years and stores
+            filter_condition = f"WHERE Year IN {tuple(selected_years)}"
+            if selected_stores:
+                filter_condition += f" AND Store IN {tuple(map(str, selected_stores))}"
+            # Ensure weeks are ordered by WeekIndex (dynamic chronological order)
+            weeks = run_query(f"SELECT DISTINCT Week FROM deliveries_returns_combined {filter_condition} ORDER BY WeekIndex").values.flatten().tolist()
+            selected_weeks = st.multiselect("Select Week(s)", weeks, default=[])
+        else:
+            selected_stores = []
+            selected_weeks = []
+    
+    # Build query based on filters
+    query = "SELECT * FROM deliveries_returns_combined WHERE 1=1"
+    if selected_years:
+        query += f" AND Year IN {tuple(selected_years)}"
+    if selected_stores:
+        query += f" AND Store IN {tuple(map(str, selected_stores))}"
+    if selected_weeks:
+        query += f" AND Week IN {tuple(map(str, selected_weeks))}"
+    
+    # Execute query and display data
+    df = run_query(query)
+    st.dataframe(df)
+    
+    # Show financial metrics at the top
+    if not df.empty:
+        # Financial metrics row
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            total_delivery_amount = df['DeliveryAmount'].sum()
+            st.metric("Deliveries Total (R)", f"R {total_delivery_amount:,.2f}")
+        
+        with col2:
+            total_return_amount = df['ReturnAmount'].sum()
+            st.metric("Total Returns (R)", f"R {total_return_amount:,.2f}")
+        
+        with col3:
+            revenue_after_returns = total_delivery_amount - total_return_amount
+            st.metric("Revenue After Returns", f"R {revenue_after_returns:,.2f}")
+        
+        st.markdown("---")  # Separator line
+        
+        # Quantity metrics row
+        col4, col5, col6, col7 = st.columns(4)
+        
+        with col4:
+            st.metric("Total Deliveries", f"{df['Delivered'].sum():.0f}")
+        
+        with col5:
+            st.metric("Total Returns", f"{df['Returns'].sum():.0f}")
+        
+        with col6:
+            st.metric("Return Rate", f"{(df['Returns'].sum() / df['Delivered'].sum() * 100):.1f}%")
+        
+        with col7:
+            st.metric("Net Deliveries", f"{(df['Delivered'].sum() - df['Returns'].sum()):.0f}")
+        
+        # Chart showing deliveries vs returns by week
+        st.subheader("Deliveries vs Returns by Week")
+        weekly_summary = df.groupby(['Week', 'WeekIndex']).agg({
+            'Delivered': 'sum',
+            'Returns': 'sum'
+        }).reset_index().sort_values('WeekIndex')
+        
+        # Create combined labels for better display
+        weekly_summary['WeekLabel'] = weekly_summary['WeekIndex'].astype(str) + ": " + weekly_summary['Week']
+        
+        # Create a chart showing both deliveries and returns
+        chart_data = weekly_summary[['WeekLabel', 'Delivered', 'Returns']].set_index('WeekLabel')
+        st.line_chart(chart_data)
+        
+        # Return Rate Over Time
+        st.subheader("Return Rate Over Time")
+        weekly_return_rate = df.groupby(['Week', 'WeekIndex']).agg({
+            'Delivered': 'sum',
+            'Returns': 'sum'
+        }).reset_index().sort_values('WeekIndex')
+        weekly_return_rate['Return Rate %'] = (weekly_return_rate['Returns'] / weekly_return_rate['Delivered'] * 100).round(2)
+        weekly_return_rate['WeekLabel'] = weekly_return_rate['WeekIndex'].astype(str) + ": " + weekly_return_rate['Week']
+        
+        # Create line chart for return rate over time
+        return_rate_chart = weekly_return_rate[['WeekLabel', 'Return Rate %']].set_index('WeekLabel')
+        st.line_chart(return_rate_chart)
+        
+        # Return Rate Per Store
+        st.subheader("Return Rate Per Store")
+        store_return_rate = df.groupby(['Store', 'Week', 'WeekIndex']).agg({
+            'Delivered': 'sum',
+            'Returns': 'sum'
+        }).reset_index()
+        store_return_rate['Return Rate %'] = (store_return_rate['Returns'] / store_return_rate['Delivered'] * 100).round(2)
+        store_return_rate['WeekLabel'] = store_return_rate['WeekIndex'].astype(str) + ": " + store_return_rate['Week']
+        store_return_rate = store_return_rate.sort_values('WeekIndex')
+        
+        # Create plotly line chart for return rate per store
+        fig_store_return_rate = px.line(
+            store_return_rate,
+            x='WeekLabel',
+            y='Return Rate %',
+            color='Store',
+            markers=True,
+            labels={'WeekLabel': 'Week', 'Return Rate %': 'Return Rate (%)', 'Store': 'Store'},
+            title='Return Rate per Store Over Time'
+        )
+        fig_store_return_rate.update_layout(xaxis_title='Week (Chronological)', yaxis_title='Return Rate (%)', legend_title='Store')
+        st.plotly_chart(fig_store_return_rate, use_container_width=True)
+        
+        # Store performance comparison
+        st.subheader("Store Performance Comparison")
+        store_summary = df.groupby('Store').agg({
+            'Delivered': 'sum',
+            'Returns': 'sum',
+            'DeliveryAmount': 'sum',
+            'ReturnAmount': 'sum'
+        }).reset_index()
+        store_summary['Return Rate %'] = (store_summary['Returns'] / store_summary['Delivered'] * 100).round(1)
+        store_summary['Net Deliveries'] = store_summary['Delivered'] - store_summary['Returns']
+        store_summary['Loss from Returns'] = store_summary['DeliveryAmount'] - store_summary['ReturnAmount']
+        
+        st.dataframe(store_summary.sort_values('Return Rate %', ascending=False))
+    else:
+        st.warning("No data available for the selected filters.")
 
 # Footer
 st.markdown("---")

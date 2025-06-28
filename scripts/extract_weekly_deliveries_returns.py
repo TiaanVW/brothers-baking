@@ -60,8 +60,8 @@ def extract_store_name(row):
     # Check for store name in the second column (index 1)
     if len(row) >= 2 and row[1] and not pd.isna(row[1]):
         store = str(row[1]).strip()
-        # Common identifiers for store names
-        store_indicators = ['CHECKERS', 'SPAR', 'PNP', 'SAVEWAYS', 'GROVE', 'HAZYVIEW', 'BARBERTON', 'PLAZA', 'KLIPFONTEIN']
+        # Common identifiers for store names - expanded to include MALL
+        store_indicators = ['CHECKERS', 'SPAR', 'PNP', 'SAVEWAYS', 'GROVE', 'HAZYVIEW', 'BARBERTON', 'PLAZA', 'KLIPFONTEIN', 'MALL']
         if any(indicator in store.upper() for indicator in store_indicators):
             return store
     return None
@@ -214,6 +214,9 @@ returns_df = pd.DataFrame({
 # Convert numeric columns
 returns_df['Returns'] = pd.to_numeric(returns_df['Returns'], errors='coerce')
 returns_df['ReturnAmount'] = pd.to_numeric(returns_df['ReturnAmount'], errors='coerce')
+
+# Round to 2 decimal places to fix floating-point precision issues
+returns_df['ReturnAmount'] = returns_df['ReturnAmount'].round(2)
 
 # Remove any rows where either 'Returns' or 'ReturnAmount' contains non-numeric values
 returns_df = returns_df.dropna(subset=['Returns', 'ReturnAmount'])
