@@ -21,7 +21,7 @@ class DailyExpensesPage:
         
         # Filters in sidebar
         with st.sidebar:
-            filters = self.filters.expense_filters("daily_expense")
+            filters = self._get_basic_filters("daily_expense")
         
         # Build and execute query
         df = self._get_filtered_data(filters)
@@ -31,6 +31,18 @@ class DailyExpensesPage:
         
         # Show chart
         self.charts.amount_by_date_chart(df, "Amount by Date Hierarchy")
+    
+    def _get_basic_filters(self, table_name):
+        """Create basic filters for daily expense data (no Category column)"""
+        st.subheader("Filters")
+        
+        selected_years = self.filters.year_filter(table_name)
+        selected_months = self.filters.month_filter(table_name, selected_years)
+        
+        return {
+            'years': selected_years,
+            'months': selected_months
+        }
     
     def _get_filtered_data(self, filters):
         """Get filtered data based on selected filters"""

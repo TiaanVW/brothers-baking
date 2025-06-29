@@ -1,0 +1,38 @@
+# Invoke configuration for Brothers Baking Data Pipeline
+
+# Global settings
+run:
+  # Enable colored output
+  echo: true
+  # Show commands being executed
+  echo_stdin: false
+  # Working directory (relative to this file)
+  cwd: "."
+  # Environment variables
+  env:
+    PYTHONPATH: "."
+    STREAMLIT_BROWSER_GATHER_USAGE_STATS: "false"
+
+# Task-specific settings
+tasks:
+  # Pipeline settings
+  pipeline:
+    # Default timeout for long-running tasks (in seconds)
+    timeout: 3600
+    
+  # App settings  
+  app:
+    # Default Streamlit settings
+    default_port: 8501
+    default_host: "localhost"
+    
+  # Extract settings
+  extract:
+    # Default output directory
+    output_dir: "raw_outputs"
+    
+  # Format settings
+  format:
+    # Default input/output directories
+    input_dir: "raw_outputs"
+    output_dir: "data" 

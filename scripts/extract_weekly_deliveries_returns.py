@@ -6,7 +6,7 @@ from datetime import datetime
 
 # Path to the source data file (adjust if necessary)
 source_file = os.path.join(os.path.dirname(__file__), '../data_sources/MAIN DOCUMENT 2025 (Autosaved).xlsx')
-output_file = os.path.join(os.path.dirname(__file__), '../data/raw_returns.csv')
+output_file = os.path.join(os.path.dirname(__file__), '../raw_outputs/weekly_deliveries_returns.csv')
 
 # Check if source file exists
 if not os.path.exists(source_file):

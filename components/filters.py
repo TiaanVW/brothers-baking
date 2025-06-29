@@ -35,7 +35,7 @@ class FilterComponents:
     
     def category_group_filter(self, table_name, default_all=True):
         """Create a category group filter widget"""
-        category_groups = self.data_service.get_distinct_values(table_name, '"Category Group"')
+        category_groups = self.data_service.get_distinct_values(table_name, "Category Group")
         default = category_groups if default_all else []
         return st.multiselect("Select Category Group(s)", category_groups, default=default)
     
