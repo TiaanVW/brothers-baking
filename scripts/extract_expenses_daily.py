@@ -4,9 +4,9 @@ from datetime import datetime
 import re
 
 # Configuration
-input_file = 'MAIN DOCUMENT 2025 (Autosaved).xlsx'
+input_file = 'data_sources/MAIN DOCUMENT 2025 (Autosaved).xlsx'
 sheet_name = 'EXPENSE DAILY'  # Target the EXPENSE DAILY sheet
-output_file = 'expense_daily_powerbi_ready.csv'
+output_file = 'raw_outputs/expenses_daily.csv'
 
 print(f"Processing {sheet_name} from {input_file}...")
 

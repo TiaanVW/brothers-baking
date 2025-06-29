@@ -1,76 +1,206 @@
-# Brothers Baking - Data Analytics Dashboard
+# Brothers Baking Analytics Dashboard
 
-This project provides a data analytics dashboard for Brothers Baking, using DuckDB for data storage and Streamlit for visualization.
+A comprehensive data analytics dashboard for Brothers Baking, built with Streamlit and featuring a modular architecture with automated data pipeline orchestration.
 
-## Project Structure
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.9+
+- Virtual environment (recommended)
+
+### Installation
+
+1. **Clone and setup environment:**
+   ```bash
+   cd brothers_baking
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+2. **Check pipeline status:**
+   ```bash
+   invoke status
+   ```
+
+3. **Run complete data pipeline:**
+   ```bash
+   invoke pipeline.all
+   ```
+
+4. **Start the dashboard:**
+   ```bash
+   invoke app.run
+   ```
+
+## 🏗️ Architecture
+
+This project follows a clean, modular architecture:
 
 ```
 brothers_baking/
-├── app.py                      # Main Streamlit app entry point
-├── requirements.txt            # Python dependencies
-├── README.md                   # Project overview and setup instructions
-
-├── data/                       # Raw or processed CSV data files
-│   └── *.csv                   # Various CSV data files
-
-├── db/                         # Local database files
-│   └── data.duckdb             # DuckDB database file
-
-├── scripts/                    # Data processing or ETL scripts
-│   ├── process_data.py         # Converts CSVs to DB or cleans data
-│   └── load_to_db.py           # Loads pandas data into the DB
-
-├── utils/                      # Reusable Python modules/utilities
-│   └── db_utils.py             # DB connection, query functions, etc.
-
-└── assets/                     # Optional: images, logos, or static files
-    └── logo.png                # Company logo
+├── app.py                          # Main Streamlit application
+├── config/                         # Configuration settings
+├── services/                       # Data service layer
+├── components/                     # Reusable UI components
+├── page_modules/                   # Individual page modules
+├── task_modules/                   # Invoke task definitions
+├── scripts/                        # Data processing scripts
+└── data/                          # Processed data files
 ```
 
-## Setup Instructions
+## 📊 Data Pipeline
 
-1. **Install dependencies**
+The data processing pipeline consists of three stages:
+
+1. **Extract** - Extract data from Excel sources
+2. **Format** - Clean and format the extracted data
+3. **Combine** - Merge related datasets
+
+### Pipeline Commands
 
 ```bash
-pip install -r requirements.txt
+# Run complete pipeline
+invoke pipeline.all
+
+# Run individual stages
+invoke extract.all
+invoke format.all
+invoke combine.all
+
+# Check pipeline status
+invoke status
+
+# Clean pipeline outputs
+invoke pipeline.clean
 ```
 
-2. **Process the data**
+## 🎛️ Available Tasks
 
+### Pipeline Operations
+- `invoke pipeline.all` - Run complete pipeline
+- `invoke pipeline.status` - Check pipeline status
+- `invoke pipeline.clean` - Clean all outputs
+
+### Data Processing
+- `invoke extract.all` - Run all extraction tasks
+- `invoke format.all` - Run all formatting tasks
+- `invoke combine.all` - Run all combination tasks
+
+### Application Management
+- `invoke app.run` - Start the dashboard
+- `invoke app.test` - Test application imports
+- `invoke app.check-data` - Verify required data files
+
+### Convenience Commands
+- `invoke status` - Quick status check
+- `invoke run-app` - Start dashboard (alias)
+- `invoke run-pipeline` - Run complete pipeline (alias)
+
+## 📈 Dashboard Features
+
+### Available Pages
+- **Daily Expenses** - Daily expense analysis
+- **Daily Weekly Expenses** - Weekly expense trends
+- **Expense Daily** - Daily expense breakdowns
+- **Combined View** - Multi-dataset comparison
+- **Returns Summary** - Product return analysis
+- **Deliveries Summary** - Delivery performance
+- **Deliveries & Returns Combined** - Comprehensive delivery/return metrics
+
+### Key Metrics
+- Revenue tracking
+- Return rate analysis
+- Store performance comparison
+- Delivery efficiency metrics
+- Financial summaries
+
+## 🔧 Development
+
+### Adding New Pages
+1. Create page class in `page_modules/`
+2. Add to `config/app_config.py`
+3. Register in `components/page_router.py`
+
+### Adding New Tasks
+1. Create task in appropriate `task_modules/` file
+2. Tasks automatically available via Invoke
+
+### Data Sources
+- Place Excel files in `data_sources/` directory
+- Update script paths if needed
+- Run `invoke pipeline.all` to process
+
+## 📋 Task Reference
+
+For detailed task documentation, see [INVOKE_GUIDE.md](INVOKE_GUIDE.md)
+
+## 🛠️ Troubleshooting
+
+### Common Issues
+
+1. **Missing data files:**
+   ```bash
+   invoke check-data
+   invoke pipeline.all
+   ```
+
+2. **Import errors:**
+   ```bash
+   invoke app.test
+   ```
+
+3. **Port conflicts:**
+   ```bash
+   invoke app.run --port=8502
+   ```
+
+### Debug Mode
 ```bash
-python scripts/process_data.py
+invoke --echo pipeline.all  # Verbose output
 ```
 
-3. **Load data into the database**
+## 📚 Documentation
 
+- [Invoke Guide](INVOKE_GUIDE.md) - Complete task orchestration guide
+- [Refactoring Notes](REFACTORING_NOTES.md) - Architecture details
+
+## 🔄 Typical Workflows
+
+### Daily Data Update
 ```bash
-python scripts/load_to_db.py
+invoke pipeline.clean
+invoke pipeline.all
+invoke app.run
 ```
 
-4. **Run the Streamlit app**
-
+### Development
 ```bash
-streamlit run app.py
+invoke app.test
+invoke status
+invoke app.run --port=8502
 ```
 
-The application will then be available at http://localhost:8501
+### Production Deployment
+```bash
+invoke pipeline.all
+invoke app.test
+invoke app.run-headless
+```
 
-## Data Sources
+## 📊 Data Flow
 
-This dashboard uses several data sources:
-- Daily expenses pivot table
-- Daily income and expense data
-- Weekly expense analysis
+```
+Excel Sources → Extract Scripts → Raw CSV → Format Scripts → Formatted CSV → Combine Scripts → Final Data → Dashboard
+```
 
-## Features
+## 🎯 Benefits
 
-- Visualization of daily expenses
-- Comparison of income vs expenses
-- Analysis of weekly expense trends
+- **Modular Architecture** - Easy to maintain and extend
+- **Automated Pipeline** - One-command data processing
+- **Clean Separation** - Data, UI, and orchestration layers
+- **Developer Friendly** - Clear structure and documentation
+- **Production Ready** - Robust error handling and logging
 
-## Requirements
+---
 
-- Python 3.9+
-- DuckDB
-- Streamlit
-- Pandas
+**Built with:** Streamlit, Pandas, DuckDB, Plotly, Invoke

@@ -2,7 +2,7 @@ import pandas as pd
 import os
 
 # Input and output file paths
-input_file = os.path.join(os.path.dirname(__file__), '../data/daily_weekly_expenses_powerbi_ready.csv')
+input_file = os.path.join(os.path.dirname(__file__), '../raw_outputs/daily_weekly_expenses.csv')
 output_file = os.path.join(os.path.dirname(__file__), '../data/daily_weekly_expenses_formatted.csv')
 
 # Read the CSV file

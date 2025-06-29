@@ -53,7 +53,7 @@ def parse_week_string(week_str):
     return pd.Timestamp(year=1900, month=1, day=1)
 
 # Define file paths
-input_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'raw_deliveries.csv')
+input_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'raw_outputs', 'weekly_deliveries.csv')
 output_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'deliveries_formatted.csv')
 
 # Check if input file exists

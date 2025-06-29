@@ -4,4 +4,5 @@ __pycache__/
 .env
 data/
 data_sources/
+raw_outputs/
 app_original.py

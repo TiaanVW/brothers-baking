@@ -80,10 +80,16 @@ class DataService:
     
     def get_distinct_values(self, table, column, where_clause=""):
         """Get distinct values from a table column with optional WHERE clause"""
-        query = f"SELECT DISTINCT {column} FROM {table}"
+        # Handle column names with spaces by quoting them
+        if ' ' in column:
+            column_quoted = f'"{column}"'
+        else:
+            column_quoted = column
+            
+        query = f"SELECT DISTINCT {column_quoted} FROM {table}"
         if where_clause:
             query += f" WHERE {where_clause}"
-        query += f" ORDER BY {column}"
+        query += f" ORDER BY {column_quoted}"
         
         result = self.run_query(query)
         return result[column].tolist() if not result.empty else []

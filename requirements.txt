@@ -4,3 +4,4 @@ duckdb==1.3.0
 matplotlib==3.8.2
 plotly==5.18.0
 numpy==1.26.2
+invoke==2.2.0

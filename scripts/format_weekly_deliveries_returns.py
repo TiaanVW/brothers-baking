@@ -75,7 +75,7 @@ def main():
     # Define input and output paths
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_dir = os.path.dirname(script_dir)
-    raw_returns_path = os.path.join(project_dir, 'data', 'raw_returns.csv')
+    raw_returns_path = os.path.join(project_dir, 'raw_outputs', 'weekly_deliveries_returns.csv')
     output_path = os.path.join(project_dir, 'data', 'returns_formatted.csv')
     
     # Read the raw returns data
